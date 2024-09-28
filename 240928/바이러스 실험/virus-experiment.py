@@ -1,78 +1,89 @@
 # import sys
 
-# sys.stdin = open("input.txt", "r")
+# sys.stdin =open("input.txt", "r")
 
-dirs = [[-1,0], [-1,-1], [0,-1], [1,-1], [1,0], [1,1], [0,1], [-1,1]]
 
-def in_board(R, C, N):
+dirs = [[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]]
+
+def in_board(R,C, N):
     return 0<=R<N and 0<=C<N
 
 
-def exp_virus(board, plus_board, virus, K, N):
-    # 1. 양분 섭취
-    # 2. 죽은 바이러스 양분으로 변환 (나이/2)
-    # 3. 5의 배수 바이러스 번식
-    # 4. 양분 추가
-
+def simulation(board, virus_board, plus_board, N, K):
     for _ in range(K):
-        dead_virus=[]
-        after_virus=[]
-        for v in virus:
-            if board[v[0]][v[1]]>=v[2]:
-                board[v[0]][v[1]]-=v[2]
-                v[2]+=1
-                after_virus+=[v]
-            else:
-                dead_virus+=[v]
-        for dv in dead_virus:
-            board[dv[0]][dv[1]]+=int(dv[2]/2)
-
-        virus.clear()
-
-        for av in after_virus:
-            if av[2]%5==0:
-                for d in dirs:
-                    if in_board(av[0]+d[0], av[1]+d[1], N):
-                        virus.append([av[0]+d[0], av[1]+d[1], 1])
-
-            virus.append(av)
-
-        virus.sort()
 
         for i in range(N):
             for j in range(N):
+                if virus_board[i][j]:
+                    virus_board[i][j].sort()
+                    tmp_virus = []
+                    for virus in virus_board[i][j]:
+                        if board[i][j]>=virus:
+                            board[i][j]-=virus
+                            tmp_virus.append(virus+1)
+                        else:
+                            chk_left_virus = len(tmp_virus)
+                            for dead_virus in virus_board[i][j][chk_left_virus:]:
+                                board[i][j]+=dead_virus//2
+                            break
+                    virus_board[i][j]= tmp_virus
+
+
+
+        for i in range(N):
+            for j in range(N):
+                if virus_board[i][j]:
+                    for virus in virus_board[i][j]:
+                        if virus%5==0:
+                            for d in dirs:
+                                nPos = [i+d[0], j+d[1]]
+                                if in_board(nPos[0], nPos[1], N):
+                                    virus_board[nPos[0]][nPos[1]].append(1)
                 board[i][j]+=plus_board[i][j]
 
+    ans = 0
+    for i in range(N):
+        for j in range(N):
+            if virus_board[i][j]:
+                ans+=len(virus_board[i][j])
+
+    return ans
 
 
-    return len(virus)
 
 
-if __name__=="__main__":
+
+
+
+
+
+
+if __name__ == "__main__":
+    # print("Hello Wolrd")
 
     N, M, K = map(int, input().split())
 
-    board = [[5]*N for _ in range(N)]
-    # print(N, M, K)
-    plus_board = [
+    plus_board= [
         list(map(int, input().split()))
         for _ in range(N)
     ]
 
+    # print(N, M, K)
     # print(*plus_board, sep='\n')
+
+    virus_board = [
+        [list() for _ in range(N)]
+        for _ in range(N)
+    ]
+
+    board = [[5]*N for _ in range(N)]
+
+    for _ in range(M):
+        R, C, age = map(int, input().split())
+        virus_board[R-1][C-1].append(age)
 
     # print(*board, sep='\n')
 
-    # virus = [
-    #     list(map(int, input().split()))
-    #     for _ in range(M)
-    # ]
-    virus = [
-        list(x-1 if idx<2 else x for idx, x in enumerate(map(int, input().split())))
-        for _ in range(M)
-    ]
-    # print(*virus, sep='\n')
-
-    ans = exp_virus(board, plus_board, virus, K, N)
+    ans = simulation(board, virus_board, plus_board, N, K)
 
     print(ans)
